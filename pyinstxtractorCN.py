@@ -134,7 +134,7 @@ class PyInstArchive:
             self.fPtr = open(self.filePath, 'rb')
             self.fileSize = os.stat(self.filePath).st_size
         except:
-            print('[!] Error: Could not open {0}'.format(self.filePath))
+            print('[!] 错误: 无法打开 {0}'.format(self.filePath))
             return False
         return True
 
@@ -147,14 +147,14 @@ class PyInstArchive:
 
 
     def checkFile(self):
-        print('[+] Processing {0}'.format(self.filePath))
+        print('[+] 正在处理 {0}'.format(self.filePath))
 
         searchChunkSize = 8192
         endPos = self.fileSize
         self.cookiePos = -1
 
         if endPos < len(self.MAGIC):
-            print('[!] Error : File is too short or truncated')
+            print('[!] 错误: 文件过短或已损坏')
             return False
 
         while True:
@@ -179,17 +179,17 @@ class PyInstArchive:
                 break
 
         if self.cookiePos == -1:
-            print('[!] Error : Missing cookie, unsupported pyinstaller version or not a pyinstaller archive')
+            print('[!] 错误: 未找到 cookie，可能是不支持的 PyInstaller 版本或不是 PyInstaller 归档')
             return False
 
         self.fPtr.seek(self.cookiePos + self.PYINST20_COOKIE_SIZE, os.SEEK_SET)
 
         if b'python' in self.fPtr.read(64).lower():
-            print('[+] Pyinstaller version: 2.1+')
+            print('[+] PyInstaller 版本: 2.1+')
             self.pyinstVer = 21     # pyinstaller 2.1+
         else:
             self.pyinstVer = 20     # pyinstaller 2.0
-            print('[+] Pyinstaller version: 2.0')
+            print('[+] PyInstaller 版本: 2.0')
 
         return True
 
@@ -211,11 +211,11 @@ class PyInstArchive:
                 struct.unpack('!8sIIii64s', self.fPtr.read(self.PYINST21_COOKIE_SIZE))
 
         except:
-            print('[!] Error : The file is not a pyinstaller archive')
+            print('[!] 错误: 该文件不是 PyInstaller 归档')
             return False
 
         self.pymaj, self.pymin = (pyver//100, pyver%100) if pyver >= 100 else (pyver//10, pyver%10)
-        print('[+] Python version: {0}.{1}'.format(self.pymaj, self.pymin))
+        print('[+] Python 版本: {0}.{1}'.format(self.pymaj, self.pymin))
 
         # Additional data after the cookie
         tailBytes = self.fileSize - self.cookiePos - (self.PYINST20_COOKIE_SIZE if self.pyinstVer == 20 else self.PYINST21_COOKIE_SIZE)
@@ -226,7 +226,7 @@ class PyInstArchive:
         self.tableOfContentsPos = self.overlayPos + toc
         self.tableOfContentsSize = tocLen
 
-        print('[+] Length of package: {0} bytes'.format(lengthofPackage))
+        print('[+] 包长度: {0} 字节'.format(lengthofPackage))
         return True
 
 
@@ -251,7 +251,7 @@ class PyInstArchive:
                 name = name.decode("utf-8").rstrip("\0")
             except UnicodeDecodeError:
                 newName = str(uniquename())
-                self._printWarning('[!] Warning: File name {0} contains invalid bytes. Using random name {1}'.format(name, newName))
+                self._printWarning('[!] 警告: 文件名 {0} 含有无效字节，使用随机名称 {1}'.format(name, newName))
                 name = newName
             
             # Prevent writing outside the extraction directory
@@ -260,7 +260,7 @@ class PyInstArchive:
 
             if len(name) == 0:
                 name = str(uniquename())
-                self._printWarning('[!] Warning: Found an unamed file in CArchive. Using random name {0}'.format(name))
+                self._printWarning('[!] 警告: 在 CArchive 中发现未命名文件，使用随机名称 {0}'.format(name))
 
             self.tocList.append( \
                                 CTOCEntry(                      \
@@ -273,7 +273,7 @@ class PyInstArchive:
                                 ))
 
             parsedLen += entrySize
-        print('[+] Found {0} files in CArchive'.format(len(self.tocList)))
+        print('[+] 在 CArchive 中发现 {0} 个文件'.format(len(self.tocList)))
 
 
     def _writeRawData(self, filepath, data):
@@ -287,7 +287,7 @@ class PyInstArchive:
 
 
     def extractFiles(self):
-        print('[+] Beginning extraction...please standby')
+        print('[+] 开始提取，请稍候...')
         extractionDir = os.path.join(os.getcwd(), os.path.basename(self.filePath) + '_extracted')
 
         if not os.path.exists(extractionDir):
@@ -303,7 +303,7 @@ class PyInstArchive:
                 try:
                     data = zlib.decompress(data)
                 except zlib.error:
-                    print('[!] Error : Failed to decompress {0}'.format(entry.name))
+                    print('[!] 错误: 解压 {0} 失败'.format(entry.name))
                     continue
                 # Malware may tamper with the uncompressed size
                 # Comment out the assertion in such a case
@@ -324,7 +324,7 @@ class PyInstArchive:
             if entry.typeCmprsData == b's':
                 # s -> ARCHIVE_ITEM_PYSOURCE
                 # Entry point are expected to be python scripts
-                print('[+] Possible entry point: {0}.pyc'.format(entry.name))
+                print('[+] 可能的入口点: {0}.pyc'.format(entry.name))
 
                 if self.pycMagic == b'\0' * 4:
                     # if we don't have the pyc header yet, fix them in a later pass
@@ -402,7 +402,7 @@ class PyInstArchive:
 
             elif self.pycMagic != pyzPycMagic:
                 self.pycMagic = pyzPycMagic
-                self._printWarning('[!] Warning: pyc magic of files inside PYZ archive are different from those in CArchive')
+                self._printWarning('[!] 警告: PYZ 归档内文件的 pyc magic 与 CArchive 中不一致')
 
             # Skip PYZ extraction if not running under the same python version
             (tocPosition, ) = struct.unpack('!i', f.read(4))
@@ -414,20 +414,20 @@ class PyInstArchive:
             sameVersion = self.pymaj == pymaj and self.pymin == pymin
 
             if not sameVersion:
-                self._printWarning('[!] Warning: This script is running in a different Python version than the one used to build the executable.')
-                print('[!] Please run this script in Python {0}.{1} to prevent extraction errors during unmarshalling'.format(self.pymaj, self.pymin))
+                self._printWarning('[!] 警告: 当前脚本运行的 Python 版本与打包该可执行文件的版本不一致。')
+                print('[!] 请使用 Python {0}.{1} 运行本脚本，以避免反序列化过程中的提取错误'.format(self.pymaj, self.pymin))
 
                 if self.pythonExe is not None:
                     toc = self._loadPyzTocWithExternalInterpreter(name, tocPosition)
                     useCurrentInterpreter = False
                     if toc is None and self.tryPyzExtraction:
-                        self._printWarning('[!] Warning: Falling back to current interpreter because -f/--force was provided.')
+                        self._printWarning('[!] 警告: 因提供了 -f/--force，回退为使用当前解释器继续尝试。')
                         useCurrentInterpreter = True
                 elif self.tryPyzExtraction:
-                    self._printWarning('[!] Warning: Trying to unmarshal the PYZ archive with the current interpreter because -f/--force was provided.')
+                    self._printWarning('[!] 警告: 因提供了 -f/--force，正在使用当前解释器尝试反序列化 PYZ。')
                 else:
-                    print('[!] Reason: Python version mismatch (target {0}.{1}, current {2}.{3})'.format(self.pymaj, self.pymin, pymaj, pymin))
-                    print('[!] Skipping pyz extraction. Use -i PATH to specify an interpreter, or -f to force extraction with current interpreter.')
+                    print('[!] 原因: Python 版本不匹配（目标 {0}.{1}，当前 {2}.{3}）'.format(self.pymaj, self.pymin, pymaj, pymin))
+                    print('[!] 跳过 PYZ 提取。可使用 -i PATH 指定解释器，或使用 -f 强制当前解释器尝试提取。')
                     return
 
             if useCurrentInterpreter and toc is None:
@@ -435,11 +435,11 @@ class PyInstArchive:
                 try:
                     toc = marshal.load(f)
                 except:
-                    print('[!] Unmarshalling FAILED. Cannot extract {0}. Extracting remaining files.'.format(name))
-                    print('[!] Reason: marshal format/version mismatch or encrypted/corrupted PYZ content.')
+                    print('[!] 反序列化失败。无法提取 {0}，将继续提取剩余文件。'.format(name))
+                    print('[!] 原因: marshal 格式/版本不匹配，或 PYZ 内容被加密/损坏。')
                     return
 
-            print('[+] Found {0} files in PYZ archive'.format(len(toc)))
+            print('[+] 在 PYZ 归档中发现 {0} 个文件'.format(len(toc)))
 
             # From pyinstaller 3.1+ toc is a list of tuples
             if type(toc) == list:
@@ -470,7 +470,7 @@ class PyInstArchive:
                     os.makedirs(fileDir)
 
                 if length == 0:
-                    self._printWarning('[!] Warning: Empty file {0}'.format(filePath))
+                    self._printWarning('[!] 警告: 空文件 {0}'.format(filePath))
                     self._writePyc(filePath, b"")
                     continue
 
@@ -478,7 +478,7 @@ class PyInstArchive:
                     data = f.read(length)
                     data = zlib.decompress(data)
                 except:
-                    print('[!] Error: Failed to decompress {0}, probably encrypted. Extracting as is.'.format(filePath))
+                    print('[!] 错误: 解压 {0} 失败，可能已加密。将按原始数据导出。'.format(filePath))
                     open(filePath + '.encrypted', 'wb').write(data)
                 else:
                     self._writePyc(filePath, data)
@@ -506,12 +506,12 @@ class PyInstArchive:
 
         absPyzPath = os.path.abspath(pyzName)
         cmd = [self.pythonExe, '-c', helperCode, absPyzPath, str(tocPosition)]
-        print('[+] Trying external interpreter for PYZ TOC: {0}'.format(self.pythonExe))
+        print('[+] 正在使用外部解释器解析 PYZ TOC: {0}'.format(self.pythonExe))
 
         try:
             output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         except OSError:
-            print('[!] Error: Failed to start external interpreter: {0}'.format(self.pythonExe))
+            print('[!] 错误: 无法启动外部解释器: {0}'.format(self.pythonExe))
             return None
         except subprocess.CalledProcessError as ex:
             out = ex.output
@@ -520,8 +520,8 @@ class PyInstArchive:
                     out = out.decode('utf-8')
                 except:
                     out = out.decode('latin-1', 'ignore')
-                print('[!] External interpreter error output:\n{0}'.format(out.strip()))
-            self._printWarning('[!] Warning: External interpreter failed to unmarshal PYZ TOC.')
+                print('[!] 外部解释器错误输出:\n{0}'.format(out.strip()))
+            self._printWarning('[!] 警告: 外部解释器反序列化 PYZ TOC 失败。')
             return None
 
         if not isinstance(output, str):
@@ -533,7 +533,7 @@ class PyInstArchive:
         try:
             rawToc = json.loads(output)
         except:
-            self._printWarning('[!] Warning: External interpreter returned unexpected output. Falling back.')
+            self._printWarning('[!] 警告: 外部解释器返回了无法识别的输出，正在回退。')
             return None
 
         toc = {}
@@ -549,14 +549,14 @@ class PyInstArchive:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Extract a PyInstaller generated executable file.')
-    parser.add_argument('filename', nargs='?', help='Path to the PyInstaller executable/archive file')
+    parser = argparse.ArgumentParser(description='提取 PyInstaller 生成的可执行文件内容。')
+    parser.add_argument('filename', nargs='?', help='PyInstaller 可执行文件/归档路径')
     parser.add_argument(
         '-f',
         '--force',
         dest='try_pyz',
         action='store_true',
-        help='Force PYZ unmarshalling with the current interpreter when versions do not match'
+        help='当版本不匹配时，强制使用当前解释器尝试反序列化 PYZ'
     )
     parser.add_argument(
         '-i',
@@ -564,7 +564,7 @@ def main():
         dest='python_exe',
         metavar='PATH',
         default=None,
-        help='Use a specific Python interpreter to unmarshal PYZ TOC'
+        help='指定用于反序列化 PYZ TOC 的 Python 解释器路径'
     )
     args = parser.parse_args()
 
@@ -579,9 +579,9 @@ def main():
                 arch.parseTOC()
                 arch.extractFiles()
                 arch.close()
-                print('[+] Successfully extracted pyinstaller archive: {0}'.format(args.filename))
+                print('[+] 已成功提取 PyInstaller 归档: {0}'.format(args.filename))
                 print('')
-                print('You can now use a python decompiler on the pyc files within the extracted directory')
+                print('现在可以对提取目录中的 pyc 文件使用 Python 反编译器。')
                 return
 
         arch.close()
