@@ -9,7 +9,7 @@ The header of the pyc files are automatically fixed so that a Python bytecode de
 
 This project was originally hosted on [SourceForge](https://sourceforge.net/projects/pyinstallerextractor/).
 
-## Usage
+## ℹ️ Usage
 
 The script can be run by passing the name of the exe as an argument.
 
@@ -20,7 +20,7 @@ X:\>python pyinstxtractor.py <filename>
 
 It is recommended to run the script in the same version of Python which was used to generate the executable. This is to prevent unmarshalling errors(if any) while extracting the PYZ archive.
 
-## Additional options in this fork
+## ⭐ Additional options in this fork
 
 - `-i PATH`, `--interpreter PATH`  
   Use a specific Python interpreter to unmarshal `PYZ TOC`. This is useful when your current Python version does not match the target executable version.
@@ -30,10 +30,10 @@ It is recommended to run the script in the same version of Python which was used
 
 Running the script without arguments prints the full help and parameter descriptions.
 
-## Example
+## 📙 Example
 
 ```
-X:\> python pyinstxtractor.py test.exe
+C:\> python pyinstxtractor.py test.exe
 [+] Processing dist\test.exe
 [+] Pyinstaller version: 2.1+
 [+] Python version: 36
@@ -54,13 +54,13 @@ After extracting the pyc's you can use a Python decompiler like [Uncompyle6](htt
 X:\> uncompyle6.exe test.exe_extracted\test.pyc
 X:\> uncompyle6.exe test.exe_extracted\PYZ-00.pyz_extracted\__future__.pyc
 ```
-## Extracting Linux ELF binaries
+## 🔃 Extracting Linux ELF binaries
 
 Pyinstxtractor can natively extract Linux ELF binaries without requiring other tools.
 
 For other questions and information, please see the [Wiki](https://github.com/extremecoders-re/pyinstxtractor/wiki/Extracting-Linux-ELF-binaries) and the [FAQ](https://github.com/extremecoders-re/pyinstxtractor/wiki/Frequently-Asked-Questions)
 
-## See also
+## 🔗 See also
 
 - [pyinstxtractor-ng](https://github.com/pyinstxtractor/pyinstxtractor-ng): 
 A standalone binary version of pyinstxtractor. This tool doesn't require Python to run and can extract all supported versions of PyInstaller. It also supports encrypted pyinstaller executables.
